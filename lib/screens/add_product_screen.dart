@@ -19,7 +19,8 @@ class AddProductScreen extends StatefulWidget {
 class _AddProductScreenState extends State<AddProductScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _quantityController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _stockController = TextEditingController();
   final _priceController = TextEditingController();
 
   File? _selectedImage;
@@ -28,36 +29,26 @@ class _AddProductScreenState extends State<AddProductScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _quantityController.dispose();
+    _descriptionController.dispose();
+    _stockController.dispose();
     _priceController.dispose();
     super.dispose();
   }
 
-  // --------------------------------------------------------------
-  // Pick image from camera or gallery
-  // --------------------------------------------------------------
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: source, imageQuality: 85);
-
     if (picked != null) {
-      setState(() {
-        _selectedImage = File(picked.path);
-      });
+      setState(() => _selectedImage = File(picked.path));
     }
   }
 
-  // --------------------------------------------------------------
-  // Copy image to app documents folder (handles duplicates)
-  // --------------------------------------------------------------
   Future<String?> _copyImageToAppDir(File source) async {
     if (source.path.isEmpty) return null;
-
     final appDir = await getApplicationDocumentsDirectory();
     final fileName = p.basename(source.path);
     var savedFile = File('${appDir.path}/$fileName');
 
-    // If file already exists, add timestamp to avoid overwrite
     if (await savedFile.exists()) {
       final ext = p.extension(fileName);
       final name = p.basenameWithoutExtension(fileName);
@@ -66,21 +57,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
       savedFile = File('${appDir.path}/$newName');
     }
 
-    try {
-      await source.copy(savedFile.path);
-      return savedFile.path;
-    } catch (e) {
-      debugPrint('Image copy failed: $e');
-      return null;
-    }
+    await source.copy(savedFile.path);
+    return savedFile.path;
   }
 
-  // --------------------------------------------------------------
-  // Save product to database
-  // --------------------------------------------------------------
   Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isSaving = true);
 
     try {
@@ -91,7 +73,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
       final product = Product(
         name: _nameController.text.trim(),
-        quantity: int.parse(_quantityController.text),
+        description: _descriptionController.text.trim(),
+        stock: int.parse(_stockController.text),
         price: double.parse(_priceController.text),
         imagePath: imagePath,
       );
@@ -100,27 +83,19 @@ class _AddProductScreenState extends State<AddProductScreen> {
           .addProduct(product);
 
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Product added successfully!'),
+          content: Text('Product added!'),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
         ),
-        );
-
+      );
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -128,10 +103,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Add Product',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
+        title: const Text('Add Product', style: TextStyle(fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
@@ -139,21 +111,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
           TextButton(
             onPressed: _isSaving ? null : _saveProduct,
             child: _isSaving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.black,
-                    ),
-                  )
-                : const Text(
-                    'Save',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Save', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -164,7 +123,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // =================== IMAGE PICKER ===================
+              // IMAGE
               Center(
                 child: Stack(
                   children: [
@@ -175,29 +134,18 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(16),
                         image: _selectedImage != null
-                            ? DecorationImage(
-                                image: FileImage(_selectedImage!),
-                                fit: BoxFit.cover,
-                              )
+                            ? DecorationImage(image: FileImage(_selectedImage!), fit: BoxFit.cover)
                             : null,
                       ),
                       child: _selectedImage == null
-                          ? const Icon(
-                              Icons.inventory_2,
-                              size: 48,
-                              color: Colors.grey,
-                            )
+                          ? const Icon(Icons.inventory_2, size: 48, color: Colors.grey)
                           : null,
                     ),
                     Positioned(
                       right: -4,
                       bottom: -4,
                       child: IconButton(
-                        icon: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.black,
-                          size: 28,
-                        ),
+                        icon: const Icon(Icons.camera_alt, color: Colors.black, size: 28),
                         onPressed: () => _showImageSourceDialog(),
                         style: IconButton.styleFrom(
                           backgroundColor: Colors.white,
@@ -211,7 +159,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(height: 24),
 
-              // =================== NAME FIELD ===================
+              // NAME
               TextFormField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
@@ -220,88 +168,74 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.label),
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a product name';
-                  }
-                  return null;
-                },
+                validator: (v) => v?.trim().isEmpty ?? true ? 'Enter name' : null,
               ),
               const SizedBox(height: 16),
 
-              // =================== QUANTITY FIELD ===================
+              // DESCRIPTION
               TextFormField(
-                controller: _quantityController,
+                controller: _descriptionController,
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.description),
+                  alignLabelWithHint: true,
+                ),
+                validator: (v) => v?.trim().isEmpty ?? true ? 'Enter description' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // STOCK
+              TextFormField(
+                controller: _stockController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Quantity',
+                  labelText: 'Stock',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.numbers),
+                  prefixIcon: Icon(Icons.inventory),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter quantity';
-                  }
-                  final qty = int.tryParse(value);
-                  if (qty == null || qty <= 0) {
-                    return 'Enter a valid number greater than 0';
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Enter stock';
+                  if (int.tryParse(v) == null || int.parse(v) <= 0) {
+                    return 'Enter valid number > 0';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
 
-              // =================== PRICE FIELD ===================
+              // PRICE
               TextFormField(
                 controller: _priceController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(
                   labelText: 'Price',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.attach_money),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter price';
-                  }
-                  final price = double.tryParse(value);
-                  if (price == null || price <= 0) {
-                    return 'Enter a valid price greater than 0';
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Enter price';
+                  if (double.tryParse(v) == null || double.parse(v) <= 0) {
+                    return 'Enter valid price > 0';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 32),
 
-              // =================== SAVE BUTTON ===================
+              // SAVE
               ElevatedButton(
                 onPressed: _isSaving ? null : _saveProduct,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _isSaving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Add Product',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white))
+                    : const Text('Add Product', style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -310,36 +244,24 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
   }
 
-  // --------------------------------------------------------------
-  // Show bottom sheet: Camera or Gallery
-  // --------------------------------------------------------------
   void _showImageSourceDialog() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: Colors.black87),
+              leading: const Icon(Icons.camera_alt),
               title: const Text('Take Photo'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
+              onTap: () { Navigator.pop(context); _pickImage(ImageSource.camera); },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Colors.black87),
+              leading: const Icon(Icons.photo_library),
               title: const Text('Choose from Gallery'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.gallery);
-              },
+              onTap: () { Navigator.pop(context); _pickImage(ImageSource.gallery); },
             ),
-            const SizedBox(height: 8),
           ],
         ),
       ),

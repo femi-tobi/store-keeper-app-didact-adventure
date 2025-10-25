@@ -79,15 +79,25 @@ class HomeScreen extends StatelessWidget {
           final products = provider.products;
           if (products.isEmpty) {
             return const Center(
-              child: Text('No products yet',
-                  style: TextStyle(fontSize: 18, color: Colors.grey)),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inventory_2_outlined,
+                      size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No products yet',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                ],
+              ),
             );
           }
 
           return ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             itemCount: products.length,
-            itemBuilder: (_, i) => _InventoryCard(product: products[i]),
+            itemBuilder: (context, i) => _InventoryCard(product: products[i]),
           );
         },
       ),
@@ -96,7 +106,7 @@ class HomeScreen extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------
-// SINGLE INVENTORY CARD – matches the design 1-to-1
+// SINGLE INVENTORY CARD – matches design
 // ---------------------------------------------------------------------
 class _InventoryCard extends StatelessWidget {
   final Product product;
@@ -160,9 +170,11 @@ class _InventoryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
 
-                      // Description (optional – we keep first 60 chars)
+                      // Description
                       Text(
-                        _shortDescription(),
+                        product.description.isEmpty
+                            ? 'No description'
+                            : product.description,
                         style:
                             const TextStyle(fontSize: 13, color: Colors.grey),
                         maxLines: 2,
@@ -177,7 +189,7 @@ class _InventoryCard extends StatelessWidget {
                               size: 10, color: Colors.redAccent),
                           const SizedBox(width: 4),
                           Text(
-                            'In stock: ${product.quantity}',
+                            'In stock: ${product.stock}',
                             style: const TextStyle(
                                 fontSize: 13, fontWeight: FontWeight.w500),
                           ),
@@ -194,9 +206,8 @@ class _InventoryCard extends StatelessWidget {
                                 elevation: 0,
                               ),
                               onPressed: () {
-                                // Quick-add one unit (optional feature)
                                 final updated = product.copyWith(
-                                    quantity: product.quantity + 1);
+                                    stock: product.stock + 1);
                                 provider.updateProduct(updated);
                               },
                               child: const Icon(Icons.add, size: 18),
@@ -216,7 +227,7 @@ class _InventoryCard extends StatelessWidget {
   }
 
   // -----------------------------------------------------------------
-  // Image with fallback placeholder (exactly like the mockup)
+  // Image with fallback
   // -----------------------------------------------------------------
   Widget _productImage() {
     const double size = 80;
@@ -255,15 +266,5 @@ class _InventoryCard extends StatelessWidget {
             size: 36, color: Colors.grey),
       ),
     );
-  }
-
-  // -----------------------------------------------------------------
-  // Short description – you can store a longer description later
-  // -----------------------------------------------------------------
-  String _shortDescription() {
-    // For now we just show a static hint. Replace with real field later.
-    const demo =
-        'An elegant classic of highest quality. Brazil Campo Das Vertentes is a pure, fresh coffee with notes of dried fig, nougat, and chocolate.';
-    return demo.length > 60 ? '${demo.substring(0, 60)}...' : demo;
   }
 }

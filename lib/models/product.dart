@@ -1,14 +1,16 @@
 class Product {
   final int? id;
   final String name;
-  final int quantity;
+  final String description;
+  final int stock;
   final double price;
   final String? imagePath;
 
   Product({
     this.id,
     required this.name,
-    required this.quantity,
+    required this.description,
+    required this.stock,
     required this.price,
     this.imagePath,
   });
@@ -17,7 +19,8 @@ class Product {
     return {
       'id': id,
       'name': name,
-      'quantity': quantity,
+      'description': description,
+      'stock': stock,
       'price': price,
       'image_path': imagePath,
     };
@@ -27,7 +30,8 @@ class Product {
     return Product(
       id: map['id'] as int?,
       name: map['name'] as String,
-      quantity: map['quantity'] as int,
+      description: map['description'] as String? ?? '',
+      stock: map['stock'] as int? ?? 0,
       price: (map['price'] as num).toDouble(),
       imagePath: map['image_path'] as String?,
     );
@@ -36,14 +40,16 @@ class Product {
   Product copyWith({
     int? id,
     String? name,
-    int? quantity,
+    String? description,
+    int? stock,
     double? price,
     String? imagePath,
   }) {
     return Product(
       id: id ?? this.id,
       name: name ?? this.name,
-      quantity: quantity ?? this.quantity,
+      description: description ?? this.description,
+      stock: stock ?? this.stock,
       price: price ?? this.price,
       imagePath: imagePath ?? this.imagePath,
     );

@@ -1,41 +1,35 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart';
+
 import '../models/product.dart';
 
 class ProductProvider extends ChangeNotifier {
   List<Product> _products = [];
-  bool _isLoading = true;
   Database? _db;
+  bool _isLoading = true;
 
   List<Product> get products => _products;
   bool get isLoading => _isLoading;
 
-  // -------------------------------------------------
-  // Initialise DB (called from main.dart)
-  // -------------------------------------------------
+  // =================================================================
+  // Initialize database
+  // =================================================================
   Future<void> initDatabase() async {
     _isLoading = true;
     notifyListeners();
 
-    final docsDir = await getApplicationDocumentsDirectory();
-    final path = join(docsDir.path, 'storekeeper.db');
+    final documentsDirectory = await getApplicationDocumentsDirectory();
+    final path = p.join(documentsDirectory.path, 'storekeeper.db');
 
     _db = await openDatabase(
       path,
-      version: 1,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            quantity INTEGER NOT NULL,
-            price REAL NOT NULL,
-            image_path TEXT
-          )
-        ''');
-      },
+      version: 2, // Increased version for migration
+      onCreate: _createDb,
+      onUpgrade: _onUpgrade,
     );
 
     await _loadProducts();
@@ -43,39 +37,88 @@ class ProductProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // -------------------------------------------------
-  // Load all from DB
-  // -------------------------------------------------
-  Future<void> _loadProducts() async {
-    final maps = await _db!.query('products');
-    _products = maps.map(Product.fromMap).toList();
+  // =================================================================
+  // Create table (version 1)
+  // =================================================================
+  Future<void> _createDb(Database db, int version) async {
+    await db.execute('''
+      CREATE TABLE products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL,
+        stock INTEGER NOT NULL,
+        price REAL NOT NULL,
+        image_path TEXT
+      )
+    ''');
   }
 
-  // -------------------------------------------------
-  // CRUD – placeholders (full impl in next step)
-  // -------------------------------------------------
-   Future<void> addProduct(Product p) async {
-    final id = await _db!.insert('products', p.toMap());
-    final newProduct = p.copyWith(id: id);
+  // =================================================================
+  // Migration: Add description + stock (from old schema)
+  // =================================================================
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE products ADD COLUMN description TEXT NOT NULL DEFAULT ""');
+      await db.execute('ALTER TABLE products ADD COLUMN stock INTEGER NOT NULL DEFAULT 0');
+    }
+  }
+
+  // =================================================================
+  // Load all products
+  // =================================================================
+  Future<void> _loadProducts() async {
+    final List<Map<String, dynamic>> maps = await _db!.query('products');
+    _products = maps.map((m) => Product.fromMap(m)).toList();
+  }
+
+  // =================================================================
+  // Add product
+  // =================================================================
+  Future<void> addProduct(Product product) async {
+    final id = await _db!.insert('products', product.toMap());
+    final newProduct = product.copyWith(id: id);
     _products.add(newProduct);
     notifyListeners();
   }
 
-  Future<void> updateProduct(Product p) async {
+  // =================================================================
+  // Update product
+  // =================================================================
+  Future<void> updateProduct(Product product) async {
     await _db!.update(
       'products',
-      p.toMap(),
+      product.toMap(),
       where: 'id = ?',
-      whereArgs: [p.id],
+      whereArgs: [product.id],
     );
-    final idx = _products.indexWhere((e) => e.id == p.id);
-    if (idx != -1) _products[idx] = p;
+
+    final index = _products.indexWhere((p) => p.id == product.id);
+    if (index != -1) {
+      _products[index] = product;
+      notifyListeners();
+    }
+  }
+
+  // =================================================================
+  // Delete product
+  // =================================================================
+  Future<void> deleteProduct(int id) async {
+    await _db!.delete('products', where: 'id = ?', whereArgs: [id]);
+    _products.removeWhere((p) => p.id == id);
     notifyListeners();
   }
 
-  Future<void> deleteProduct(int id) async {
-    await _db!.delete('products', where: 'id = ?', whereArgs: [id]);
-    _products.removeWhere((e) => e.id == id);
-    notifyListeners();
+  // =================================================================
+  // Optional: Delete image file when product is deleted
+  // =================================================================
+  Future<void> deleteProductWithImage(int id) async {
+    final product = _products.firstWhere((p) => p.id == id, orElse: () => Product(name: '', description: '', stock: 0, price: 0));
+    if (product.imagePath != null && product.imagePath!.isNotEmpty) {
+      final file = File(product.imagePath!);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    }
+    await deleteProduct(id);
   }
 }
