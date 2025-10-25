@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'screens/home_screen.dart';
 import 'screens/add_product_screen.dart';
 import 'screens/edit_product_screen.dart';
 import 'screens/product_detail_screen.dart';
+import 'screens/profile_screen.dart';
 import 'providers/product_provider.dart';
 
 void main() {
@@ -32,6 +32,7 @@ class StorekeeperApp extends StatelessWidget {
           '/add': (_) => const AddProductScreen(),
           '/edit': (_) => const EditProductScreen(),
           '/detail': (_) => const ProductDetailScreen(),
+          '/profile': (_) => const ProfileScreen(),
         },
       ),
     );

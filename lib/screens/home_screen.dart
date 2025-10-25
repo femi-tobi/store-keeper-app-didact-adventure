@@ -6,44 +6,73 @@ import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../providers/product_provider.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  Future<bool> _confirmDelete(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Delete product?'),
-            content: const Text('This action cannot be undone.'),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel')),
-              TextButton(
-                  style:
-                      TextButton.styleFrom(foregroundColor: Colors.redAccent),
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('Delete')),
-            ],
-          ),
-        ) ??
-        false;
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isSearching = false;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inventory',
-            style: TextStyle(fontWeight: FontWeight.w600)),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                style: const TextStyle(color: Colors.black87),
+                decoration: const InputDecoration(
+                  hintText: 'Search products...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: Colors.grey),
+                ),
+                onChanged: (value) {
+                  setState(() => _searchQuery = value.toLowerCase());
+                },
+              )
+            : const Text('Inventory',
+                style: TextStyle(fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
+        leading: _isSearching
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  setState(() {
+                    _isSearching = false;
+                    _searchController.clear();
+                    _searchQuery = '';
+                  });
+                },
+              )
+            : null,
         actions: [
-          IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+          if (!_isSearching)
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () => setState(() => _isSearching = true),
+            ),
           Stack(
             children: [
-              IconButton(icon: const Icon(Icons.person), onPressed: () {}),
+              IconButton(
+                icon: const Icon(Icons.person),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/profile');
+                },
+              ),
               Positioned(
                 right: 8,
                 top: 8,
@@ -76,18 +105,29 @@ class HomeScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final products = provider.products;
-          if (products.isEmpty) {
-            return const Center(
+          // Filter products based on search
+          final filteredProducts = provider.products.where((p) {
+            return p.name.toLowerCase().contains(_searchQuery);
+          }).toList();
+
+          if (filteredProducts.isEmpty) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.inventory_2_outlined,
-                      size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
+                  Icon(
+                    _searchQuery.isEmpty
+                        ? Icons.inventory_2_outlined
+                        : Icons.search_off,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(height: 16),
                   Text(
-                    'No products yet',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                    _searchQuery.isEmpty
+                        ? 'No products yet'
+                        : 'No products found',
+                    style: const TextStyle(fontSize: 18, color: Colors.grey),
                   ),
                 ],
               ),
@@ -96,8 +136,9 @@ class HomeScreen extends StatelessWidget {
 
           return ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            itemCount: products.length,
-            itemBuilder: (context, i) => _InventoryCard(product: products[i]),
+            itemCount: filteredProducts.length,
+            itemBuilder: (context, i) =>
+                _InventoryCard(product: filteredProducts[i]),
           );
         },
       ),
@@ -106,7 +147,7 @@ class HomeScreen extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------
-// SINGLE INVENTORY CARD – matches design
+// SINGLE INVENTORY CARD
 // ---------------------------------------------------------------------
 class _InventoryCard extends StatelessWidget {
   final Product product;
@@ -126,7 +167,25 @@ class _InventoryCard extends StatelessWidget {
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       confirmDismiss: (_) async {
-        final delete = await HomeScreen()._confirmDelete(context);
+        final delete = await showDialog<bool>(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('Delete product?'),
+                content: const Text('This action cannot be undone.'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Cancel')),
+                  TextButton(
+                      style: TextButton.styleFrom(
+                          foregroundColor: Colors.redAccent),
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Delete')),
+                ],
+              ),
+            ) ??
+            false;
+
         if (delete) {
           provider.deleteProduct(product.id!);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -160,7 +219,6 @@ class _InventoryCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Title
                       Text(
                         product.name,
                         style: const TextStyle(
@@ -169,8 +227,6 @@ class _InventoryCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-
-                      // Description
                       Text(
                         product.description.isEmpty
                             ? 'No description'
@@ -181,8 +237,6 @@ class _InventoryCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
-
-                      // In stock + plus button
                       Row(
                         children: [
                           const Icon(Icons.circle,
@@ -226,12 +280,8 @@ class _InventoryCard extends StatelessWidget {
     );
   }
 
-  // -----------------------------------------------------------------
-  // Image with fallback
-  // -----------------------------------------------------------------
   Widget _productImage() {
     const double size = 80;
-
     if (product.imagePath == null || product.imagePath!.isEmpty) {
       return Container(
         width: size,
@@ -241,7 +291,6 @@ class _InventoryCard extends StatelessWidget {
             size: 36, color: Colors.grey),
       );
     }
-
     final file = File(product.imagePath!);
     if (!file.existsSync()) {
       return Container(
@@ -252,7 +301,6 @@ class _InventoryCard extends StatelessWidget {
             size: 36, color: Colors.grey),
       );
     }
-
     return Image.file(
       file,
       width: size,
