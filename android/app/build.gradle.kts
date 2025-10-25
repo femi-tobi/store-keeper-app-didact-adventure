@@ -9,6 +9,8 @@ android {
     namespace = "com.example.storekeeper_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+    minSdkVersion 19   // MUST BE ≥ 19
+    targetSdkVersion 34
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

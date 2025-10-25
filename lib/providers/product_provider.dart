@@ -54,7 +54,7 @@ class ProductProvider extends ChangeNotifier {
   // -------------------------------------------------
   // CRUD – placeholders (full impl in next step)
   // -------------------------------------------------
-  Future<void> addProduct(Product p) async {
+   Future<void> addProduct(Product p) async {
     final id = await _db!.insert('products', p.toMap());
     final newProduct = p.copyWith(id: id);
     _products.add(newProduct);

@@ -2,15 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:storekeeper_app/models/product.dart';
-import 'package:storekeeper_app/providers/product_provider.dart';
+
+import '../models/product.dart';
+import '../providers/product_provider.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  // -------------------------------------------------
-  // Helper: show delete confirmation dialog
-  // -------------------------------------------------
   Future<bool> _confirmDelete(BuildContext context) async {
     return await showDialog<bool>(
           context: context,
@@ -19,14 +17,13 @@ class HomeScreen extends StatelessWidget {
             content: const Text('This action cannot be undone.'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel')),
               TextButton(
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Delete'),
-              ),
+                  style:
+                      TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Delete')),
             ],
           ),
         ) ??
@@ -37,46 +34,60 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Storekeeper'),
-        elevation: 2,
+        title: const Text('Inventory',
+            style: TextStyle(fontWeight: FontWeight.w600)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+        actions: [
+          IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+          Stack(
+            children: [
+              IconButton(icon: const Icon(Icons.person), onPressed: () {}),
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints:
+                      const BoxConstraints(minWidth: 14, minHeight: 14),
+                  child: const Text('4',
+                      style: TextStyle(color: Colors.white, fontSize: 10),
+                      textAlign: TextAlign.center),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.black,
         onPressed: () => Navigator.pushNamed(context, '/add'),
-        tooltip: 'Add Product',
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: Consumer<ProductProvider>(
         builder: (context, provider, _) {
-          // Show loading spinner while DB is initializing
           if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
           final products = provider.products;
-
           if (products.isEmpty) {
             return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'No products yet',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
-                ],
-              ),
+              child: Text('No products yet',
+                  style: TextStyle(fontSize: 18, color: Colors.grey)),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             itemCount: products.length,
-            itemBuilder: (ctx, i) {
-              final product = products[i];
-              return _ProductCard(product: product);
-            },
+            itemBuilder: (_, i) => _InventoryCard(product: products[i]),
           );
         },
       ),
@@ -84,13 +95,12 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------
-// Separate widget for a single product card (easier to test & reuse)
-// -----------------------------------------------------------------
-class _ProductCard extends StatelessWidget {
+// ---------------------------------------------------------------------
+// SINGLE INVENTORY CARD – matches the design 1-to-1
+// ---------------------------------------------------------------------
+class _InventoryCard extends StatelessWidget {
   final Product product;
-
-  const _ProductCard({required this.product});
+  const _InventoryCard({required this.product});
 
   @override
   Widget build(BuildContext context) {
@@ -106,57 +116,154 @@ class _ProductCard extends StatelessWidget {
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       confirmDismiss: (_) async {
-        final shouldDelete = await HomeScreen()._confirmDelete(context);
-        if (shouldDelete) {
+        final delete = await HomeScreen()._confirmDelete(context);
+        if (delete) {
           provider.deleteProduct(product.id!);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Product deleted')),
           );
         }
-        return false; // we handle delete ourselves
+        return false;
       },
       child: Card(
-        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-        child: ListTile(
-          leading: _buildImage(),
-          title: Text(
-            product.name,
-            style: const TextStyle(fontWeight: FontWeight.w600),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => Navigator.pushNamed(context, '/detail',
+              arguments: product),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ---- IMAGE ----
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: _productImage(),
+                ),
+                const SizedBox(width: 12),
+
+                // ---- TEXT CONTENT ----
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      Text(
+                        product.name,
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w600),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+
+                      // Description (optional – we keep first 60 chars)
+                      Text(
+                        _shortDescription(),
+                        style:
+                            const TextStyle(fontSize: 13, color: Colors.grey),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+
+                      // In stock + plus button
+                      Row(
+                        children: [
+                          const Icon(Icons.circle,
+                              size: 10, color: Colors.redAccent),
+                          const SizedBox(width: 4),
+                          Text(
+                            'In stock: ${product.quantity}',
+                            style: const TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                          const Spacer(),
+                          SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.zero,
+                                shape: const CircleBorder(),
+                                elevation: 0,
+                              ),
+                              onPressed: () {
+                                // Quick-add one unit (optional feature)
+                                final updated = product.copyWith(
+                                    quantity: product.quantity + 1);
+                                provider.updateProduct(updated);
+                              },
+                              child: const Icon(Icons.add, size: 18),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          subtitle: Text('Qty: ${product.quantity}  •  \$${product.price.toStringAsFixed(2)}'),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-          onTap: () {
-            // Navigate to Detail (optional) → Edit
-            Navigator.pushNamed(
-              context,
-              '/detail',
-              arguments: product,
-            );
-          },
         ),
       ),
     );
   }
 
-  Widget _buildImage() {
+  // -----------------------------------------------------------------
+  // Image with fallback placeholder (exactly like the mockup)
+  // -----------------------------------------------------------------
+  Widget _productImage() {
+    const double size = 80;
+
     if (product.imagePath == null || product.imagePath!.isEmpty) {
-      return const CircleAvatar(
-        backgroundColor: Colors.grey.shade200,
-        child: Icon(Icons.inventory_2, color: Colors.grey),
+      return Container(
+        width: size,
+        height: size,
+        color: Colors.grey[200],
+        child: const Icon(Icons.inventory_2,
+            size: 36, color: Colors.grey),
       );
     }
 
     final file = File(product.imagePath!);
     if (!file.existsSync()) {
-      return const CircleAvatar(
-        backgroundColor: Colors.grey.shade200,
-        child: Icon(Icons.broken_image, color: Colors.grey),
+      return Container(
+        width: size,
+        height: size,
+        color: Colors.grey[200],
+        child: const Icon(Icons.broken_image,
+            size: 36, color: Colors.grey),
       );
     }
 
-    return CircleAvatar(
-      backgroundImage: FileImage(file),
-      radius: 24,
+    return Image.file(
+      file,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        width: size,
+        height: size,
+        color: Colors.grey[200],
+        child: const Icon(Icons.broken_image,
+            size: 36, color: Colors.grey),
+      ),
     );
+  }
+
+  // -----------------------------------------------------------------
+  // Short description – you can store a longer description later
+  // -----------------------------------------------------------------
+  String _shortDescription() {
+    // For now we just show a static hint. Replace with real field later.
+    const demo =
+        'An elegant classic of highest quality. Brazil Campo Das Vertentes is a pure, fresh coffee with notes of dried fig, nougat, and chocolate.';
+    return demo.length > 60 ? '${demo.substring(0, 60)}...' : demo;
   }
 }
