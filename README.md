@@ -39,7 +39,7 @@ Supports **full CRUD**, **camera & gallery image upload**, **search**, and **per
 
 ## GitHub Repository
 
-[https://github.com/femi-tobi/store-keeper-app-didact-adventure.git](Click Here)
+[https://github.com/femi-tobi/store-keeper-app-didact-adventure.git](https://github.com/femi-tobi/store-keeper-app-didact-adventure.git)
 
 ---
 
