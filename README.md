@@ -50,5 +50,3 @@ Supports **full CRUD**, **camera & gallery image upload**, **search**, and **per
 | ![home](screenshots/home.png) | ![add](screenshots/add.png) | ![detail](screenshots/detail.png) |
 
 ---
-
-**Built by Adefemi Oluwatobi**
