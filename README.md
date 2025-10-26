@@ -33,7 +33,7 @@ Supports **full CRUD**, **camera & gallery image upload**, **search**, and **per
 
 ## Demo Video (3 mins)
 
-[Watch Full App Walkthrough](https://drive.google.com/file/d/YOUR_VIDEO_LINK/view?usp=sharing)
+[Watch Full App Walkthrough](https://drive.google.com/file/d/1RygGbf1JPF3tlLaDbR2f37-cAsb6ShzJ/view?usp=sharing)
 
 ---
 
