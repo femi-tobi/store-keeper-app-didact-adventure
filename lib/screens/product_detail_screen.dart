@@ -42,7 +42,6 @@ class ProductDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // =================== IMAGE ===================
             Center(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
@@ -51,7 +50,6 @@ class ProductDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // =================== NAME ===================
             Text(
               product.name,
               style: const TextStyle(
@@ -61,7 +59,6 @@ class ProductDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // =================== DESCRIPTION ===================
             if (product.description.isNotEmpty) ...[
               const Text(
                 'Description',
@@ -83,7 +80,6 @@ class ProductDetailScreen extends StatelessWidget {
               const SizedBox(height: 20),
             ],
 
-            // =================== STOCK & PRICE ===================
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -101,7 +97,6 @@ class ProductDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
-            // =================== DELETE BUTTON ===================
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -126,9 +121,6 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
-  // -----------------------------------------------------------------
-  // Build image with fallback
-  // -----------------------------------------------------------------
   Widget _buildImage(Product product) {
     const double size = 280;
 
@@ -173,9 +165,6 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 
-  // -----------------------------------------------------------------
-  // Delete confirmation dialog
-  // -----------------------------------------------------------------
   void _showDeleteDialog(BuildContext context, Product product) {
     showDialog(
       context: context,
@@ -190,9 +179,8 @@ class ProductDetailScreen extends StatelessWidget {
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () {
-              Navigator.pop(context); // close dialog
-              Navigator.pop(context); // go back to home
-              // Delete handled in HomeScreen via swipe or EditScreen
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
             child: const Text('Delete'),
           ),
@@ -202,9 +190,6 @@ class ProductDetailScreen extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------
-// Reusable info chip
-// ---------------------------------------------------------------------
 class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;

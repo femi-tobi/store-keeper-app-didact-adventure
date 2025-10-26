@@ -123,7 +123,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // IMAGE
               Center(
                 child: Stack(
                   children: [
@@ -159,7 +158,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(height: 24),
 
-              // NAME
               TextFormField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
@@ -172,7 +170,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(height: 16),
 
-              // DESCRIPTION
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 3,
@@ -187,7 +184,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(height: 16),
 
-              // STOCK
               TextFormField(
                 controller: _stockController,
                 keyboardType: TextInputType.number,
@@ -206,7 +202,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(height: 16),
 
-              // PRICE
               TextFormField(
                 controller: _priceController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -225,7 +220,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(height: 32),
 
-              // SAVE
               ElevatedButton(
                 onPressed: _isSaving ? null : _saveProduct,
                 style: ElevatedButton.styleFrom(

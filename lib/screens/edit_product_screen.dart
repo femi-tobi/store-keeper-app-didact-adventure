@@ -31,7 +31,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialize controllers later in didChangeDependencies
   }
 
   @override
@@ -57,9 +56,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
     super.dispose();
   }
 
-  // --------------------------------------------------------------
-  // Pick image
-  // --------------------------------------------------------------
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: source, imageQuality: 85);
@@ -68,9 +64,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
     }
   }
 
-  // --------------------------------------------------------------
-  // Copy image to app directory
-  // --------------------------------------------------------------
   Future<String?> _copyImageToAppDir(File source) async {
     final appDir = await getApplicationDocumentsDirectory();
     final fileName = p.basename(source.path);
@@ -88,9 +81,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
     return savedFile.path;
   }
 
-  // --------------------------------------------------------------
-  // Save changes
-  // --------------------------------------------------------------
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -99,10 +89,8 @@ class _EditProductScreenState extends State<EditProductScreen> {
     try {
       String? newImagePath = _existingImagePath;
 
-      // If new image selected, copy it
       if (_selectedImage != null) {
         newImagePath = await _copyImageToAppDir(_selectedImage!);
-        // Delete old image if exists
         if (_existingImagePath != null && _existingImagePath != newImagePath) {
           final oldFile = File(_existingImagePath!);
           if (await oldFile.exists()) await oldFile.delete();
@@ -135,9 +123,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
     }
   }
 
-  // --------------------------------------------------------------
-  // Delete product
-  // --------------------------------------------------------------
   Future<void> _deleteProduct() async {
     final product = ModalRoute.of(context)!.settings.arguments as Product;
     final confirmed = await showDialog<bool>(
@@ -162,7 +147,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
     setState(() => _isDeleting = true);
 
     try {
-      // Delete image file
       if (product.imagePath != null && product.imagePath!.isNotEmpty) {
         final file = File(product.imagePath!);
         if (await file.exists()) await file.delete();
@@ -175,7 +159,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Product deleted'), backgroundColor: Colors.red),
       );
-      Navigator.pop(context); // Back to home
+      Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
@@ -215,7 +199,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // =================== IMAGE ===================
               Center(
                 child: Stack(
                   children: [
@@ -267,7 +250,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
               ),
               const SizedBox(height: 24),
 
-              // =================== NAME ===================
               TextFormField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
@@ -280,7 +262,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
               ),
               const SizedBox(height: 16),
 
-              // =================== DESCRIPTION ===================
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 3,
@@ -295,7 +276,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
               ),
               const SizedBox(height: 16),
 
-              // =================== STOCK ===================
               TextFormField(
                 controller: _stockController,
                 keyboardType: TextInputType.number,
@@ -312,7 +292,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
               ),
               const SizedBox(height: 16),
 
-              // =================== PRICE ===================
               TextFormField(
                 controller: _priceController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -329,7 +308,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
               ),
               const SizedBox(height: 32),
 
-              // =================== SAVE BUTTON ===================
               ElevatedButton(
                 onPressed: _isSaving ? null : _saveChanges,
                 style: ElevatedButton.styleFrom(
@@ -343,7 +321,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
               ),
               const SizedBox(height: 12),
 
-              // =================== DELETE BUTTON ===================
               OutlinedButton(
                 onPressed: _isDeleting ? null : _deleteProduct,
                 style: OutlinedButton.styleFrom(
