@@ -25,9 +25,9 @@ Supports **full CRUD**, **camera & gallery image upload**, **search**, and **per
 
 ---
 
-## APK Download
+## Appetize.io APK link
 
-[Download Storekeeper App APK](https://drive.google.com/file/d/YOUR_APK_LINK/view?usp=sharing)
+[Download Storekeeper App APK](https://appetize.io/app/b_gbvygk54l72vilg6452aeitb7u)
 
 ---
 
