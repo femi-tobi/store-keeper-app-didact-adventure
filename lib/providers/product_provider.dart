@@ -15,9 +15,7 @@ class ProductProvider extends ChangeNotifier {
   List<Product> get products => _products;
   bool get isLoading => _isLoading;
 
-  // =================================================================
-  // Initialize database
-  // =================================================================
+
   Future<void> initDatabase() async {
     _isLoading = true;
     notifyListeners();
@@ -37,9 +35,6 @@ class ProductProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // =================================================================
-  // Create table (version 1)
-  // =================================================================
   Future<void> _createDb(Database db, int version) async {
     await db.execute('''
       CREATE TABLE products (
@@ -53,9 +48,6 @@ class ProductProvider extends ChangeNotifier {
     ''');
   }
 
-  // =================================================================
-  // Migration: Add description + stock (from old schema)
-  // =================================================================
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE products ADD COLUMN description TEXT NOT NULL DEFAULT ""');
@@ -63,17 +55,11 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  // =================================================================
-  // Load all products
-  // =================================================================
   Future<void> _loadProducts() async {
     final List<Map<String, dynamic>> maps = await _db!.query('products');
     _products = maps.map((m) => Product.fromMap(m)).toList();
   }
 
-  // =================================================================
-  // Add product
-  // =================================================================
   Future<void> addProduct(Product product) async {
     final id = await _db!.insert('products', product.toMap());
     final newProduct = product.copyWith(id: id);
@@ -81,9 +67,6 @@ class ProductProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // =================================================================
-  // Update product
-  // =================================================================
   Future<void> updateProduct(Product product) async {
     await _db!.update(
       'products',
@@ -99,18 +82,12 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  // =================================================================
-  // Delete product
-  // =================================================================
   Future<void> deleteProduct(int id) async {
     await _db!.delete('products', where: 'id = ?', whereArgs: [id]);
     _products.removeWhere((p) => p.id == id);
     notifyListeners();
   }
 
-  // =================================================================
-  // Optional: Delete image file when product is deleted
-  // =================================================================
   Future<void> deleteProductWithImage(int id) async {
     final product = _products.firstWhere((p) => p.id == id, orElse: () => Product(name: '', description: '', stock: 0, price: 0));
     if (product.imagePath != null && product.imagePath!.isNotEmpty) {
